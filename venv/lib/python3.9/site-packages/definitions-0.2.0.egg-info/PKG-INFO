@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: definitions
+Version: 0.2.0
+Summary: Load and validate YAML definitions against a schema
+Home-page: http://github.com/danijar/definitions
+Author: Danijar Hafner
+Author-email: mail@danijar.com
+License: MIT
+Description: UNKNOWN
+Platform: UNKNOWN

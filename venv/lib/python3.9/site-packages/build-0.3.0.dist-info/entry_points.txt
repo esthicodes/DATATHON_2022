@@ -1,0 +1,3 @@
+[console_scripts]
+pyproject-build = build.__main__:entrypoint
+
