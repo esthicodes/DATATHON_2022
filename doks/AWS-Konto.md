@@ -81,5 +81,4 @@ Sie können die SSO-Gruppe und die Benutzer mit jedem der zuvor erstellten Benut
 1. *Akzeptieren Sie die Einladung** und geben Sie ein Passwort für den Benutzer an.
 
 Danach kann der Benutzer bei der Konfiguration der Kendra Experiences
-Funktion ausgewählt werden.
- Übersetzt mit www.DeepL.com/Translator (kostenlose Version)
+Funktion ausgewählt werden. 
