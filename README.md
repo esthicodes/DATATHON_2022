@@ -2,7 +2,11 @@
 Collaboration with Microsoft, AWS, Google, and ETHZürich Analytics Club (2022 Datathon Project)
 
 
-# Datathon
+# [Datathon Original Challenge](https://github.com/56kcloud/2022-Datathon-SAA-Challenge)
+
+# [SAV](https://www.actuaries.ch/)
+
+# [DataDays](https://datadays.ch/#start)
 
 # Reisen in Zeiten von Covid-19: Der Q&A Bot zur Reiseversicherung
 
