@@ -4,6 +4,7 @@ import os
 from threading import Thread
 from slack import WebClient
 from qa_pipeline import generate_answer
+from qa_model import call_gpt3, setup_responder, call_hs
 
 
 from dotenv import load_dotenv
@@ -23,6 +24,8 @@ print(VERIFICATION_TOKEN)
 print(SLACK_SIGNING_SECRET)
 #instantiating slack client
 slack_client = WebClient(slack_token)
+
+responder = setup_responder()
 
 # An example of one of your Flask app's routes
 @app.route("/")
@@ -52,7 +55,9 @@ def handle_message(event_data):
         if message.get("subtype") is None:
             question = message.get("text")
             channel_id = message["channel"]
-            message = generate_answer(question)
+            message = call_gpt3(responder, question)
+            message_hs = call_hs(responder, question)
+            message = message + "\n" + message_hs
 
             slack_client.chat_postMessage(channel=channel_id, text=message)
     thread = Thread(target=send_reply, kwargs={"value": event_data})
