@@ -38,6 +38,7 @@ class DataLoader:
         self.covid_json_path = os.path.join(self.dataset_dir, 'COVID-19 FAQs | Allianz Global Assistance.json')
         self.travel_json_path = os.path.join(self.dataset_dir, 'Travel Insurance FAQs | Allianz Global Assistance.json')
         self.terms_and_conditions_json_path = os.path.join(self.dataset_dir, 'Question_Answer_merged.json')
+        self.tac_csv_path = os.path.join(self.dataset_dir, 'DataInChunk.csv')
         
         self.stop_words = set(stopwords.words('german'))
         self.stemmer = WordNetLemmatizer()
@@ -67,13 +68,16 @@ class DataLoader:
     def _load_qa_jsons(self):
         covid_data = pd.read_json(self.covid_json_path)
         travel_data = pd.read_json(self.travel_json_path)
-        tac_data = pd.read_json(self.terms_and_conditions_json_path)
+        tac_df = pd.read_csv(self.tac_csv_path)
+        
+        tac_df['Question'] = ''
+        tac_df = tac_df.rename(columns={'Data':'Answer'})
+        tac_df = tac_df[['Question', 'Answer']]
         
         covid_df = pd.json_normalize(covid_data['FaqDocuments'])
         travel_df = pd.json_normalize(travel_data['FaqDocuments'])
-        tac_df = pd.json_normalize(tac_data['FaqDocuments'])
         
-        self.df = pd.concat([covid_df, travel_df], axis=0)
+        self.df = pd.concat([covid_df, travel_df, tac_df], axis=0)
         
         self.df["Question"] = self.df['Question'].apply(self._preprocess)
         self.df["Answer"] = self.df['Answer'].apply(self._preprocess)
@@ -92,7 +96,7 @@ class DataLoader:
         questions, answers = self._load_qa_jsons()
         docs = []
         for i in range(len(questions)):
-            entry = {"meta" : {"question":questions[i]}, "content" : answers[i]}
+            entry = {"meta" : {"question":''}, "content" : answers[i]}
             docs.append(entry)
         return docs
           
@@ -153,12 +157,12 @@ class HayStacker:
     def create_hs(self):
         self.retriever = self.bulit_retriver()
         self.generator = self.build_generator()
-        self.compute_docs_embeddings() ### ?
         self.pipe = self.build_pipeline()
+        self.compute_docs_embeddings() ### ?
     
     
     def call_hs(self, query):
-        res = self.pipe.run(query=query, params={"Retriever": {"top_k": 2}})
+        res = self.pipe.run(query=query, params={"Retriever": {"top_k": 3}})
         print_documents(res, max_text_len=512)
         return res
     
@@ -173,7 +177,7 @@ class GPT3:
         self.opfilename = self._upload_data()
     
     
-    def completion_api(self, info, query):
+    def completion_api(self, query, info):
         TAG = "use the above information to answer the question"
         response = openai.Completion.create(
           engine="text-davinci-002",
@@ -214,8 +218,8 @@ class GPT3:
         return resp['selected_documents'][-1]['text']
     
     
-    def post_to_gpt3_completion(self, info, query):
-        comp_ans = self.completion_api(info, query)
+    def post_to_gpt3_completion(self, query, info):
+        comp_ans = self.completion_api(query, info)
         return comp_ans
     
     
@@ -246,10 +250,12 @@ class QaPipeline:
         
         if model_name == 'hs':
             self.haystacker = HayStacker(self.docs)
+            self.haystacker.create_hs()
         elif model_name == 'gpt3':
             self.gpt3 = GPT3(self.json_line_path)
         else:
             self.haystacker = HayStacker(self.docs)
+            self.haystacker.create_hs()
             self.gpt3 = GPT3(self.json_line_path)
         
         
@@ -258,7 +264,7 @@ class QaPipeline:
         return hs_resp
         
     def _get_gpt3_response(self, query, info=None):
-        comp_ans = self.gpt3.post_to_gpt3_completion(info, query)
+        comp_ans = self.gpt3.post_to_gpt3_completion(query, info)
         answ_ans = self.gpt3.post_to_gpt3_answer(query)
         return comp_ans, answ_ans
         
@@ -268,22 +274,30 @@ class QaPipeline:
             hs_resp = self._get_hs_response(query)
             return hs_resp
         elif self.model_name == 'gpt3':
-            comp_ans, answ_ans = self._get_gpt3_response(info, query)
+            comp_ans, answ_ans = self._get_gpt3_response(query, info)
             return comp_ans, answ_ans
         else:
             hs_resp = self._get_hs_response(query)
-            comp_ans, answ_ans = self._get_gpt3_response(info, query)
+            
+            info = ''
+            for doc in hs_resp["documents"]:
+                content = doc.content
+                info += ' ' + content 
+                
+            comp_ans, answ_ans = self._get_gpt3_response(query, info)
             return hs_resp, comp_ans, answ_ans
+
 
 # %%
 if __name__ == '__main__':
-    repo_root_dir = ""
-    info = "COVID-19 is a known and evolving epidemic that is impacting travel worldwide, with continued spread and impacts expected.  Our travel protection plans do not generally cover losses directly or indirectly related to known, foreseeable, or expected events, epidemics, government prohibitions, warnings, or travel advisories, or fear of travel. However, we are pleased to announce the introduction of our Epidemic Coverage Endorsement to certain plans purchased on or after March 6, 2021.  This endorsement adds certain new covered reasons related to epidemics (including COVID-19) to some of our most popular insurance plans.  Please see the below FAQ section on “Epidemic Coverage Endorsement” for more information.  Note, the Epidemic Coverage Endorsement may not be available for all plans or in all jurisdictions.  To see if your plan includes this endorsement, please look for “Epidemic Coverage Endorsement” on your Declarations of Coverage or Letter of Confirmation. Additionally, in response to the ongoing public health and travel crisis, we are temporarily extending certain claims accommodations as follows*: 1. For plans that do not include the Epidemic Coverage Endorsement, we are temporarily accommodating claims for the following:  Emergency medical care for an insured who becomes ill with COVID-19 while on their trip (if your plan includes the Emergency Medical Care benefit) Trip cancellation and trip interruption if an insured, or that insured’s traveling companion or family member, becomes ill with COVID-19 either before or during the insured’s trip (if your plan includes Trip Cancellation or Trip Interruption benefits, as applicable)  2. If an insured or their traveling companion become ill with COVID-19 while on their trip, that insured will not be subject to the Trip Interruption benefit’s five-day maximum limit for additional accommodation and transportation expenses (however, the maximum daily limit for such expenses and the maximum Trip Interruption benefit limit still apply). These temporary accommodations are strictly applicable to COVID-19 and are only available to customers whose plan includes the applicable benefit.  These accommodations apply to plans currently in effect but may not apply to plans purchased in the future, so please refer to our Coverage Alert for the most up to date information before purchasing."
     query = "I am worried about COVID-19 impacting a trip I have scheduled or plan to schedule. Should I buy an Allianz travel protection plan to cover me in case COVID-19 impacts my trip"
+    query = "Are dogs covered by travel insurance?"
     
+    
+    repo_root_dir = ""
     model_name = 'hi'
-    
     qa_pipeline = QaPipeline(repo_root_dir, model_name)
+    
     
     if model_name == 'hi':
         hs_resp, comp_ans, answ_ans = qa_pipeline.prediction(query)
