@@ -162,8 +162,8 @@ class HayStacker:
     
     
     def call_hs(self, query):
-        res = self.pipe.run(query=query, params={"Retriever": {"top_k": 3}})
-        print_documents(res, max_text_len=512)
+        res = self.pipe.run(query=query, params={"Retriever": {"top_k": 2}})
+        # print_documents(res, max_text_len=512)
         return res
     
 # %%
@@ -188,7 +188,7 @@ class GPT3:
           frequency_penalty=0,
           presence_penalty=0)
 
-        answer = str(response['choices'][0].to_dict()['text'])[2:]
+        answer = str(response['choices'][0].to_dict()['text'])#[:]
         
         return answer
 
@@ -290,15 +290,28 @@ class QaPipeline:
 
 # %%
 if __name__ == '__main__':
-    query = "I am worried about COVID-19 impacting a trip I have scheduled or plan to schedule. Should I buy an Allianz travel protection plan to cover me in case COVID-19 impacts my trip"
-    query = "Are dogs covered by travel insurance?"
+    queries = [
+    "I am worried about COVID-19 impacting a trip I have scheduled or plan to schedule. Should I buy an Allianz travel protection plan to cover me in case COVID-19 impacts my trip",
+    "Are dogs covered by travel insurance?",
+    "Which countries are covered",
+    "I am traveling to US United States, is it covered",
+    "My child has been tested positive for covid. is it covered",
+    "I have a positive self-test, is that sufficient",
+    "A colleague has been tested positive, is my cancellation covered",
+    "I am in quarantine, is it covered",
+    ]
     
     
     repo_root_dir = ""
     model_name = 'hi'
     qa_pipeline = QaPipeline(repo_root_dir, model_name)
     
-    
-    if model_name == 'hi':
-        hs_resp, comp_ans, answ_ans = qa_pipeline.prediction(query)
-        
+    # %%
+    for query in queries:
+        if model_name == 'hi':
+            hs_resp, comp_ans, answ_ans = qa_pipeline.prediction(query)
+            print(f"query: {query}\n")
+            # print(f"hs_resp: {hs_resp}\n")
+            print(f"comp_ans: {comp_ans}\n")
+            print(f"answ_ans: {answ_ans}\n")
+            print('-----------------------------')
