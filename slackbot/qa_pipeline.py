@@ -1,2 +1,2 @@
 def generate_answer(question):
-    return "I don't know"
+    return "We don't know"
