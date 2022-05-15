@@ -1,5 +1,6 @@
 venv
 .ipynb_checkpoints
+.idea
 elasticsearch-7.9.2
 opanai_api_key.txt
 
