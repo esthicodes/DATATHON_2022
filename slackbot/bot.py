@@ -6,15 +6,21 @@ from slack import WebClient
 from qa_pipeline import generate_answer
 
 
+from dotenv import load_dotenv
+load_dotenv()  # take environment variables from .env.
+
+
 # This `app` represents your existing Flask app
 app = Flask(__name__)
 
 greetings = ["hi", "hello", "hello there", "hey"]
 
-SLACK_SIGNING_SECRET = '7c4f8c5ddf1dc7936ac3073a8e6476af'
-slack_token = 'xoxb-3412750305445-3526701802386-sLQJ8qk2bgHvgaLbcK8NNq25'
-VERIFICATION_TOKEN = 'KrvRBbk2WCUBCE6h9lshpZvx'
-
+SLACK_SIGNING_SECRET = os.environ.get("SLACK_SIGNING_SECRET")
+slack_token = os.environ.get("slack_token")
+VERIFICATION_TOKEN = os.environ.get("VERIFICATION_TOKEN")
+print(slack_token)
+print(VERIFICATION_TOKEN)
+print(SLACK_SIGNING_SECRET)
 #instantiating slack client
 slack_client = WebClient(slack_token)
 
