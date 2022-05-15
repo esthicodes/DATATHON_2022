@@ -38,7 +38,7 @@ class DataLoader:
         self.covid_json_path = os.path.join(self.dataset_dir, 'COVID-19 FAQs | Allianz Global Assistance.json')
         self.travel_json_path = os.path.join(self.dataset_dir, 'Travel Insurance FAQs | Allianz Global Assistance.json')
         self.terms_and_conditions_json_path = os.path.join(self.dataset_dir, 'Question_Answer_merged.json')
-        self.tac_csv_path = os.path.join(self.dataset_dir, 'DataInChunk.csv')
+        self.tac_csv_path = os.path.join(self.dataset_dir, 'SentenceChunkedL.csv')
         
         self.stop_words = set(stopwords.words('german'))
         self.stemmer = WordNetLemmatizer()
