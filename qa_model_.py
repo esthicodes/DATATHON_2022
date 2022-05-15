@@ -150,6 +150,18 @@ class HayStacker:
         return self.pipe
     
     
+    def create_hs(self):
+        self.retriever = self.bulit_retriver()
+        self.generator = self.build_generator()
+        self.compute_docs_embeddings() ### ?
+        self.pipe = self.build_pipeline()
+    
+    
+    def call_hs(self, query):
+        res = self.pipe.run(query=query, params={"Retriever": {"top_k": 2}})
+        print_documents(res, max_text_len=512)
+        return res
+    
 # %%
 class GPT3:
     def __init__(self, json_line_path):
@@ -200,49 +212,68 @@ class GPT3:
         )
         
         return resp['selected_documents'][-1]['text']
+    
+    
+    def post_to_gpt3_completion(self, info, query):
+        comp_ans = self.completion_api(info, query)
+        return comp_ans
+    
+    
+    def post_to_gpt3_answer(self, query):
+        answ_ans = self.answer_api(query)
+        return answ_ans
 
 
 # %%
-class Responder:
+class HsResponder:
     def __init__(self, repo_root_dir):
         self.repo_root_dir = repo_root_dir
         self.dataset_dir = os.path.join(repo_root_dir, 'dataset')
-        self.json_line_path = os.path.join(self.dataset_dir, 'qa_exported_jl.json')
         
         self.data_loader = DataLoader(repo_root_dir)
         self.docs = self.data_loader.make_document()
         
-        self.haystacker = HayStacker(self.docs)
-        self.retriever = self.haystacker.bulit_retriver()
-        self.generator = self.haystacker.build_generator()
-        self.haystacker.compute_docs_embeddings()
-        self.pipe = self.haystacker.build_pipeline()
-        
-        self.gpt3 = GPT3(self.json_line_path)
-        
-    
-    def call_hs(self, query):
-        res = self.pipe.run(query=query, params={"Retriever": {"top_k": 2}})
-        print_documents(res, max_text_len=512)
-        return res
-    
-    
-    def post_to_gpt3(self, info, query):
-        comp_ans = self.gpt3.completion_api(info, query)
-        answ_ans = self.gpt3.answer_api(query)
-        return comp_ans, answ_ans
-        
-
 # %% 
-def qa_pipeline(responder, query, info=None, repo_root_dir="", name='hs'):
-    if name == 'hs':
-        ans = responder.call_hs(query)
-        return ans, None
+class QaPipeline:
+    def __init__(self, repo_root_dir, model_name='hi'):
+        self.repo_root_dir = repo_root_dir
+        self.model_name = model_name
+        self.dataset_dir = os.path.join(repo_root_dir, 'dataset')
+        self.json_line_path = os.path.join(self.dataset_dir, 'qa_exported_jl.json')
     
-    if name == 'gpt3':
-        comp_ans, answ_ans = responder.post_to_gpt3(info, query)
+        self.data_loader = DataLoader(repo_root_dir)
+        self.docs = self.data_loader.make_document()
+        
+        if model_name == 'hs':
+            self.haystacker = HayStacker(self.docs)
+        elif model_name == 'gpt3':
+            self.gpt3 = GPT3(self.json_line_path)
+        else:
+            self.haystacker = HayStacker(self.docs)
+            self.gpt3 = GPT3(self.json_line_path)
+        
+        
+    def _get_hs_response(self, query):
+        hs_resp = self.haystacker.call_hs(query)
+        return hs_resp
+        
+    def _get_gpt3_response(self, query, info=None):
+        comp_ans = self.gpt3.post_to_gpt3_completion(info, query)
+        answ_ans = self.gpt3.post_to_gpt3_answer(query)
         return comp_ans, answ_ans
-
+        
+    
+    def prediction(self, query, info=None):
+        if self.model_name == 'hs':
+            hs_resp = self._get_hs_response(query)
+            return hs_resp
+        elif self.model_name == 'gpt3':
+            comp_ans, answ_ans = self._get_gpt3_response(info, query)
+            return comp_ans, answ_ans
+        else:
+            hs_resp = self._get_hs_response(query)
+            comp_ans, answ_ans = self._get_gpt3_response(info, query)
+            return hs_resp, comp_ans, answ_ans
 
 # %%
 if __name__ == '__main__':
@@ -250,16 +281,10 @@ if __name__ == '__main__':
     info = "COVID-19 is a known and evolving epidemic that is impacting travel worldwide, with continued spread and impacts expected.  Our travel protection plans do not generally cover losses directly or indirectly related to known, foreseeable, or expected events, epidemics, government prohibitions, warnings, or travel advisories, or fear of travel. However, we are pleased to announce the introduction of our Epidemic Coverage Endorsement to certain plans purchased on or after March 6, 2021.  This endorsement adds certain new covered reasons related to epidemics (including COVID-19) to some of our most popular insurance plans.  Please see the below FAQ section on “Epidemic Coverage Endorsement” for more information.  Note, the Epidemic Coverage Endorsement may not be available for all plans or in all jurisdictions.  To see if your plan includes this endorsement, please look for “Epidemic Coverage Endorsement” on your Declarations of Coverage or Letter of Confirmation. Additionally, in response to the ongoing public health and travel crisis, we are temporarily extending certain claims accommodations as follows*: 1. For plans that do not include the Epidemic Coverage Endorsement, we are temporarily accommodating claims for the following:  Emergency medical care for an insured who becomes ill with COVID-19 while on their trip (if your plan includes the Emergency Medical Care benefit) Trip cancellation and trip interruption if an insured, or that insured’s traveling companion or family member, becomes ill with COVID-19 either before or during the insured’s trip (if your plan includes Trip Cancellation or Trip Interruption benefits, as applicable)  2. If an insured or their traveling companion become ill with COVID-19 while on their trip, that insured will not be subject to the Trip Interruption benefit’s five-day maximum limit for additional accommodation and transportation expenses (however, the maximum daily limit for such expenses and the maximum Trip Interruption benefit limit still apply). These temporary accommodations are strictly applicable to COVID-19 and are only available to customers whose plan includes the applicable benefit.  These accommodations apply to plans currently in effect but may not apply to plans purchased in the future, so please refer to our Coverage Alert for the most up to date information before purchasing."
     query = "I am worried about COVID-19 impacting a trip I have scheduled or plan to schedule. Should I buy an Allianz travel protection plan to cover me in case COVID-19 impacts my trip"
     
-    responder = Responder(repo_root_dir)
+    model_name = 'hi'
     
+    qa_pipeline = QaPipeline(repo_root_dir, model_name)
     
-    ### HS
-    ans, _ = qa_pipeline(responder, query, name='hs')
-        
-    ### GPT3
-    comp_ans, answ_ans = qa_pipeline(responder, query, info, name='gpt3')
-    
-    
-    
-
+    if model_name == 'hi':
+        hs_resp, comp_ans, answ_ans = qa_pipeline.prediction(query)
         
