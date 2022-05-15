@@ -17,7 +17,7 @@ import openai
 import pandas as pd
 
 import nltk
-# nltk.download('stopwords')
+nltk.download('stopwords')
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -72,8 +72,8 @@ class DataLoader:
         
         self.df = pd.concat([covid_df, travel_df], axis=0)
         
-        self.df["Question"] = self.df['Question'].apply(self._preprocess)
-        self.df["Answer"] = self.df['Answer'].apply(self._preprocess)
+        # self.df["Question"] = self.df['Question'].apply(self._preprocess)
+        # self.df["Answer"] = self.df['Answer'].apply(self._preprocess)
         
         questions = self.df["Question"].values.tolist()
         answers = self.df["Answer"].values.tolist()
@@ -174,10 +174,11 @@ class GPT3:
         return answer
 
     
-    def _upload_data(self, first_time=False):
+    def _upload_data(self, first_time=True):
         if first_time:
             opfile = openai.File.create(file=open("dataset/covid_exported_jl.json"), purpose='answers')
             opfilename = opfile.to_dict()['id']
+            print("openfilename", opfilename)
         else:
             opfilename = 'file-UqMyZRjqTGYJ4OIO6iNRxWEc'
         return opfilename
@@ -186,7 +187,7 @@ class GPT3:
     def answer_api(self, query):
         resp = openai.Answer.create(
             search_model="ada", 
-            model="curie", 
+            model="text-davinci-002", 
             question=query, 
             file=self.opfilename, 
             examples_context="In 2017, U.S. life expectancy was 78.6 years.", 
@@ -195,7 +196,7 @@ class GPT3:
             max_tokens=10,
             stop=["\n", "<|endoftext|>"]
         )
-        
+
         return resp['selected_documents'][-1]['text']
 
 
@@ -242,21 +243,21 @@ def qa_pipeline(responder, query, info=None, repo_root_dir="", name='hs'):
 
 
 # %%
-if __name__ == '__main__':
+def setup_responder():
     repo_root_dir = ""
     info = "COVID-19 is a known and evolving epidemic that is impacting travel worldwide, with continued spread and impacts expected.  Our travel protection plans do not generally cover losses directly or indirectly related to known, foreseeable, or expected events, epidemics, government prohibitions, warnings, or travel advisories, or fear of travel. However, we are pleased to announce the introduction of our Epidemic Coverage Endorsement to certain plans purchased on or after March 6, 2021.  This endorsement adds certain new covered reasons related to epidemics (including COVID-19) to some of our most popular insurance plans.  Please see the below FAQ section on “Epidemic Coverage Endorsement” for more information.  Note, the Epidemic Coverage Endorsement may not be available for all plans or in all jurisdictions.  To see if your plan includes this endorsement, please look for “Epidemic Coverage Endorsement” on your Declarations of Coverage or Letter of Confirmation. Additionally, in response to the ongoing public health and travel crisis, we are temporarily extending certain claims accommodations as follows*: 1. For plans that do not include the Epidemic Coverage Endorsement, we are temporarily accommodating claims for the following:  Emergency medical care for an insured who becomes ill with COVID-19 while on their trip (if your plan includes the Emergency Medical Care benefit) Trip cancellation and trip interruption if an insured, or that insured’s traveling companion or family member, becomes ill with COVID-19 either before or during the insured’s trip (if your plan includes Trip Cancellation or Trip Interruption benefits, as applicable)  2. If an insured or their traveling companion become ill with COVID-19 while on their trip, that insured will not be subject to the Trip Interruption benefit’s five-day maximum limit for additional accommodation and transportation expenses (however, the maximum daily limit for such expenses and the maximum Trip Interruption benefit limit still apply). These temporary accommodations are strictly applicable to COVID-19 and are only available to customers whose plan includes the applicable benefit.  These accommodations apply to plans currently in effect but may not apply to plans purchased in the future, so please refer to our Coverage Alert for the most up to date information before purchasing."
     query = "I am worried about COVID-19 impacting a trip I have scheduled or plan to schedule. Should I buy an Allianz travel protection plan to cover me in case COVID-19 impacts my trip"
     
     responder = Responder(repo_root_dir)
     
-    
+    return responder
+
+def call_hs(responder, query):
     ### HS
     ans, _ = qa_pipeline(responder, query, name='hs')
-        
-    ### GPT3
-    comp_ans, answ_ans = qa_pipeline(responder, query, info, name='gpt3')
-    
-    
-    
+    return "hs: " + str(ans)
 
-        
+def call_gpt3(responder, query):
+    ### GPT3
+    comp_ans, answ_ans = qa_pipeline(responder, query, "", name='gpt3')
+    return answ_ans
