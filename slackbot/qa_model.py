@@ -6,8 +6,6 @@ Created on Sun May 15 02:23:38 2022
 @author: The Learning Machine Team
 """
 
-
-# %% Imports
 import os
 import re
 import time
@@ -29,8 +27,6 @@ from haystack.document_stores import ElasticsearchDocumentStore
 from haystack.nodes import RAGenerator, DensePassageRetriever
 from haystack.pipelines import DocumentSearchPipeline
 
-
-# %% 
 class DataLoader:
     def __init__(self, repo_root_dir):
         self.repo_root_dir = repo_root_dir
@@ -97,8 +93,6 @@ class DataLoader:
         return docs
           
 
-
-# %%
 class HayStacker:
     def __init__(self, docs):
         self.docs = docs
@@ -148,9 +142,7 @@ class HayStacker:
     def build_pipeline(self):
         self.pipe = DocumentSearchPipeline(self.retriever)
         return self.pipe
-    
-    
-# %%
+
 class GPT3:
     def __init__(self, json_line_path):
         self.json_line_path = json_line_path
@@ -202,8 +194,6 @@ class GPT3:
 
         return resp['selected_documents'][-1]['text']
 
-
-# %%
 class Responder:
     def __init__(self, repo_root_dir):
         self.repo_root_dir = repo_root_dir
@@ -234,7 +224,6 @@ class Responder:
         return comp_ans, answ_ans
         
 
-# %% 
 def qa_pipeline(responder, query, info=None, repo_root_dir="", name='hs'):
     if name == 'hs':
         ans = responder.call_hs(query)
@@ -245,7 +234,6 @@ def qa_pipeline(responder, query, info=None, repo_root_dir="", name='hs'):
         return comp_ans, answ_ans
 
 
-# %%
 def setup_responder():
     repo_root_dir = ""
     info = "COVID-19 is a known and evolving epidemic that is impacting travel worldwide, with continued spread and impacts expected.  Our travel protection plans do not generally cover losses directly or indirectly related to known, foreseeable, or expected events, epidemics, government prohibitions, warnings, or travel advisories, or fear of travel. However, we are pleased to announce the introduction of our Epidemic Coverage Endorsement to certain plans purchased on or after March 6, 2021.  This endorsement adds certain new covered reasons related to epidemics (including COVID-19) to some of our most popular insurance plans.  Please see the below FAQ section on “Epidemic Coverage Endorsement” for more information.  Note, the Epidemic Coverage Endorsement may not be available for all plans or in all jurisdictions.  To see if your plan includes this endorsement, please look for “Epidemic Coverage Endorsement” on your Declarations of Coverage or Letter of Confirmation. Additionally, in response to the ongoing public health and travel crisis, we are temporarily extending certain claims accommodations as follows*: 1. For plans that do not include the Epidemic Coverage Endorsement, we are temporarily accommodating claims for the following:  Emergency medical care for an insured who becomes ill with COVID-19 while on their trip (if your plan includes the Emergency Medical Care benefit) Trip cancellation and trip interruption if an insured, or that insured’s traveling companion or family member, becomes ill with COVID-19 either before or during the insured’s trip (if your plan includes Trip Cancellation or Trip Interruption benefits, as applicable)  2. If an insured or their traveling companion become ill with COVID-19 while on their trip, that insured will not be subject to the Trip Interruption benefit’s five-day maximum limit for additional accommodation and transportation expenses (however, the maximum daily limit for such expenses and the maximum Trip Interruption benefit limit still apply). These temporary accommodations are strictly applicable to COVID-19 and are only available to customers whose plan includes the applicable benefit.  These accommodations apply to plans currently in effect but may not apply to plans purchased in the future, so please refer to our Coverage Alert for the most up to date information before purchasing."
