@@ -30,8 +30,7 @@ ihren Kunden die richtigen Antworten zu geben. Die Verarbeitung natürlicher Spr
 dieses Geschäftsproblem zu lösen. Diese Herausforderung der Schweizerischen Aktuarvereinigung
 (SAA) bietet eine Q&A Bot-Vorlage. Diese verwendet die neuesten Amazon Web Services
 (AWS) Tools und einen realen FAQ-Datensatz. Möchten Sie dazu beitragen, dass Versicherungen
-transparenter zu machen? Wünschen Sie sich eine bequemere Reiseplanung? Dann melden Sie sich
-Sie sich für die SAA Q&A Bot Challenge an.
+transparenter zu machen? Wünschen Sie sich eine bequemere Reiseplanung? Dann melden Sie sich für die SAA Q&A Bot Challenge an.
 
 ## Erste Schritte
 In den folgenden Abschnitten finden Sie alle notwendigen Informationen, die Sie benötigen, um
